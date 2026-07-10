@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaVita Combined Rollup Hierarchy (OPER & SG&A)</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --artifact-background: var(--theme-background, #f9f9f9);
+            --artifact-text-primary: var(--theme-text-primary, #333333);
+            --artifact-text-secondary: var(--theme-text-secondary, #666666);
+            --artifact-border-light: var(--theme-border-light, #e0e0e0);
+            --artifact-node-fill: #fff;
+            --artifact-node-stroke: #666;
+            --artifact-node-collapsed: #666;
+            --artifact-link: #ccc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--artifact-background);
+            color: var(--artifact-text-primary);
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 20px;
+            user-select: none;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            font-weight: 500;
+        }
+
+        p {
+            font-size: 14px;
+            color: var(--artifact-text-secondary);
+            margin: 0;
+        }
+
+        /* The container now allows native scrolling if the tree expands beyond 800px */
+        #tree-container {
+            width: 100%;
+            height: 800px;
+            background-color: white;
+            border: 1px solid var(--artifact-border-light);
+            border-radius: 8px;
+            overflow: auto; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Remove default margin on SVG so it aligns cleanly in the scroll container */
+        svg {
+            display: block;
+        }
+
+        .node circle {
+            fill: var(--artifact-node-fill);
+            stroke: var(--artifact-node-stroke);
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+
+        .node circle.collapsed {
+            fill: var(--artifact-node-collapsed);
+        }
+
+        .node text {
+            font-size: 12px;
+            fill: var(--artifact-text-primary);
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke: var(--artifact-link);
+            stroke-width: 1.5px;
+        }
+
+        @media print {
+            body { background-color: #fff; }
+            #tree-container { height: auto; overflow: visible; box-shadow: none; border: none; }
+            .header-container { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>DaVita Combined Rollup Hierarchy (OPER & SG&A)</h1>
+        <p>Interactive Structure: Small Palmer &rarr; Group &rarr; Division &rarr; Region. Contains both OPER and SG&A hierarchies.</p>
+    </div>
+
+    <div id="tree-container"></div>
+
+    <script>
+        // Generate Sample Data with professional organizational names
+        const groups = [
+            { name: "PINNACLE", divisions: ["Pacific", "Sierra", "Desert", "Redwood", "Coastal"] },
+            { name: "MERIDIAN", divisions: ["Heartland", "Great Lakes", "Prairie", "Midwest", "Central"] },
+            { name: "ALLIANCE", divisions: ["Atlantic", "New England", "Blue Ridge", "Carolina", "Emerald"] },
+            { name: "CREST", divisions: ["Gulf Coast", "Sunbelt", "Lone Star", "Delta", "Bayou"] },
+            { name: "VANGUARD", divisions: ["Keystone", "Empire", "Liberty", "Capital", "Northern"] }
+        ];
+
+        const operTree = {
+            name: "PS014 - SMALL PALMER ORION: OPER",
+            children: groups.map((g, gIdx) => {
+                const groupId = `GV${gIdx + 1}01`;
+                return {
+                    name: `${groupId} - ${g.name}: OPER`,
+                    children: g.divisions.map((d, dIdx) => {
+                        const divId = `D${gIdx + 1}${dIdx + 1}01`;
+                        return {
+                            name: `${divId} - ${d} Division: OPER`,
+                            children: Array.from({ length: 5 }).map((_, rIdx) => {
+                                const regId = `R${gIdx + 1}${dIdx + 1}0${rIdx + 1}`;
+                                return {
+                                    name: `${regId} - ${d} Region 0${rIdx + 1}: OPER`
+                                };
+                            })
+                        };
+                    })
+                };
+            })
+        };
+
+        const sgaTree = {
+            name: "PS015 - Small Palmer ORION: SG&A",
+            children: groups.map((g, gIdx) => {
+                const groupId = `GV${gIdx + 1}02`;
+                return {
+                    name: `${groupId} - ${g.name}:SG&A`,
+                    children: g.divisions.map((d, dIdx) => {
+                        const divId = `D${gIdx + 1}${dIdx + 1}02`;
+                        return {
+                            name: `${divId} - ${d} Division:SGNA`,
+                            children: Array.from({ length: 5 }).map((_, rIdx) => {
+                                const regId = `R${gIdx + 1}${dIdx + 1}0${rIdx + 1}`;
+                                return {
+                                    name: `${regId} - ${d} Region 0${rIdx + 1}: SG&A`
+                                };
+                            })
+                        };
+                    })
+                };
+            })
+        };
+
+        const treeData = {
+            name: "DaVita Facilities",
+            children: [operTree, sgaTree]
+        };
+
+        const container = document.getElementById("tree-container");
+        
+        // Much wider margins and spacing to spread the hierarchy out
+        const margin = { top: 40, right: 350, bottom: 40, left: 120 };
+        const dx = 35;  // Vertical spacing between rows (increased from 25)
+        const dy = 260; // Horizontal spacing between depths (increased from 220)
+
+        const treeLayout = d3.tree().nodeSize([dx, dy]);
+
+        const svg = d3.select("#tree-container").append("svg");
+        const g = svg.append("g");
+
+        const root = d3.hierarchy(treeData);
+        root.x0 = 0;
+        root.y0 = 0;
+
+        // Collapse all children of groups initially to keep the view clean
+        root.children.forEach(collapseLevel2);
+
+        function collapseLevel2(d) {
+            if (d.children) {
+                d.children.forEach(child => {
+                    if (child.children) {
+                        child._children = child.children;
+                        child.children = null;
+                        child._children.forEach(collapseAll);
+                    }
+                });
+            }
+        }
+
+        function collapseAll(d) {
+            if (d.children) {
+                d._children = d.children;
+                d._children.forEach(collapseAll);
+                d.children = null;
+            }
+        }
+
+        let i = 0;
+
+        function update(source) {
+            const nodes = root.descendants();
+            const links = root.links();
+
+            treeLayout(root);
+
+            // Calculate the outer bounds of the current tree
+            let leftNode = root;
+            let rightNode = root;
+            let topNode = root;
+            let bottomNode = root;
+
+            root.eachBefore(node => {
+                if (node.x < topNode.x) topNode = node;
+                if (node.x > bottomNode.x) bottomNode = node;
+                if (node.y > rightNode.y) rightNode = node;
+                if (node.y < leftNode.y) leftNode = node;
+            });
+
+            // Dynamically calculate the required height and width
+            const currentHeight = bottomNode.x - topNode.x + margin.top + margin.bottom;
+            const currentWidth = rightNode.y + margin.left + margin.right;
+            const containerWidth = container.clientWidth;
+
+            // Ensure the SVG is at least as wide as the container so it aligns left natively
+            const finalWidth = Math.max(containerWidth, currentWidth);
+
+            const transition = svg.transition()
+                .duration(250)
+                .attr("height", currentHeight)
+                .attr("width", finalWidth)
+                .attr("viewBox", [
+                    -margin.left, 
+                    topNode.x - margin.top, 
+                    finalWidth, 
+                    currentHeight
+                ]);
+
+            // Update nodes
+            const node = g.selectAll("g.node")
+                .data(nodes, d => d.id || (d.id = ++i));
+
+            const nodeEnter = node.enter().append("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                .on("click", (event, d) => {
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update(d);
+                });
+
+            nodeEnter.append("circle")
+                .attr("r", 1e-6)
+                .attr("class", d => d._children ? "collapsed" : "");
+
+            nodeEnter.append("text")
+                .attr("dy", ".31em")
+                .attr("x", d => d.children || d._children ? -10 : 10)
+                .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                .text(d => d.data.name)
+                .style("fill-opacity", 1e-6);
+
+            const nodeUpdate = nodeEnter.merge(node)
+                .transition(transition)
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+
+            nodeUpdate.select("circle")
+                .attr("r", 5)
+                .attr("class", d => d._children ? "collapsed" : "");
+
+            nodeUpdate.select("text")
+                .style("fill-opacity", 1);
+
+            const nodeExit = node.exit().transition(transition)
+                .attr("transform", d => `translate(${source.y},${source.x})`)
+                .remove();
+
+            nodeExit.select("circle")
+                .attr("r", 1e-6);
+
+            nodeExit.select("text")
+                .style("fill-opacity", 1e-6);
+
+            // Update links
+            const link = g.selectAll("path.link")
+                .data(links, d => d.target.id);
+
+            const linkEnter = link.enter().insert("path", "g")
+                .attr("class", "link")
+                .attr("d", d => {
+                    const o = {x: source.x0, y: source.y0};
+                    return diagonal(o, o);
+                });
+
+            link.merge(linkEnter).transition(transition)
+                .attr("d", d => diagonal(d.source, d.target));
+
+            link.exit().transition(transition)
+                .attr("d", d => {
+                    const o = {x: source.x, y: source.y};
+                    return diagonal(o, o);
+                })
+                .remove();
+
+            nodes.forEach(d => {
+                d.x0 = d.x;
+                d.y0 = d.y;
+            });
+        }
+
+        function diagonal(s, d) {
+            return `M ${s.y} ${s.x}
+                    C ${(s.y + d.y) / 2} ${s.x},
+                      ${(s.y + d.y) / 2} ${d.x},
+                      ${d.y} ${d.x}`;
+        }
+
+        update(root);
+        
+        // Export Boilerplate
+        window.GleanBridge = window.GleanBridge || {};
+        if (window.GleanBridge.postMessage) {
+            window.GleanBridge.postMessage({
+                actionId: 'export-pdf',
+                type: 'glean-add-menu',
+                metadata: { label: 'Export as PDF', icon: 'export' }
+            });
+        }
+        if (window.GleanBridge.onMessage) {
+            window.GleanBridge.onMessage('action', function(data) {
+                if (data.actionId === 'export-pdf') window.print();
+            });
+        }
+    </script>
+</body>
+</html>
