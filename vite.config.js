@@ -22,6 +22,7 @@ function stripPrefix(prefix) {
 
 export default defineConfig({
   plugins: [react()],
+  base: '/MDM-Location-Test-Data-Generator/',
   server: {
     port: 5173,
     proxy: {
