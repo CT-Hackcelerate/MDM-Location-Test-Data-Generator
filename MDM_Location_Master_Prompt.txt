@@ -1,0 +1,263 @@
+**Context & Goal:**
+You are an expert Frontend Developer. Build a modern, responsive, dark-mode Single Page Application (SPA) called "MDM Location Data Generator", using a standard 3-column dashboard layout. 
+Use React + Vite and Tailwind CSS. This tool will be used by QA testers to dynamically generate synthetic test data payloads (JSON and XML) for DaVita's Location Master Data Management (MDM) system, validate them against the DB, post them, and query Kafka queues.
+
+**Critical Setup - CORS Fix via Vite Proxy (or Mock if building in Claude Artifacts):**
+If building in a local IDE, configure a proxy in `vite.config.js` to bypass CORS for `https://mdmace-{env}.davita.com`, `https://intgkafka-{env}-rest-apis.int-svcs-np.davita.com`, and `https://mdm-{env}.davita.com:443`. The frontend must *never* fetch the external URLs directly. (If building as a Claude web artifact, strictly mock these network responses with a `setTimeout`).
+
+---
+
+### **UI Layout Requirements (3 Columns):**
+
+**1. Left Column: Data Generator Control**
+*   **Environment Selector:** Radio buttons or toggles for `dev`, `qa`, `uat`. (This updates all target API URLs dynamically).
+*   **Domain Selectors (Radio/Dropdown):**
+    *   **Legal Entity** (Sub-toggle: Domestic, International) -> `/Location/IS06/legalEntityMDMProcess`
+    *   **Org Assignment** (Sub-toggle: Palmer, Division, Group, Region) -> `/Location/IS06/orgAssignment`
+    *   **Facility Hierarchy** (Sub-toggle: OPER, SG&A) -> `/Location/IS06/facilityHierarchy`
+    *   **Facility Master** (Sub-toggle: Domestic, International. PLUS a "Prefix" dropdown: None/Standard, ACQ-, CLSD-, CNXL-, DNVO-, HOLD-, SOLD-, TERM-, JV DNVO-, DIVEST-, DARK-, INTL) -> `/Location/IS06/facilityMasterMDMProcess`
+    *   **Karma** -> `/Location/IS06/locationKarmaLoad`
+    *   **MNA** -> `https://mdm-{env}.davita.com:443/MDMWSProvider/MDMService`
+    *   **NSHN** -> `https://mdm-{env}.davita.com:443/MDMWSProvider/MDMService`
+*   **Endpoint URL:** A read-only text input showing the proxy-resolved target URL.
+
+**2. Middle Column: Generated Payloads**
+*   **Generate Button:** Prominent button to build the Payload.
+*   **Output Display:** A large syntax-highlighted `<textarea>` or `<pre>` block displaying the dynamically generated JSON or XML. User can manually edit it.
+*   **Action Buttons:** 'Copy to Clipboard' and 'Run Payload' (Executes a real `POST fetch()`—use `application/json` for JSON domains, and `text/xml` for MNA/NSHN domains).
+*   **Response Panel:** A terminal-like box below the payload showing HTTP status codes, server responses, or network errors.
+
+**3. Right Column: Data Validation Control**
+*   **End to End Validation:** Button to simulate generation, extract EUID, and query queues.
+*   **Preprocess Queue:** Input field for EUID and a "Query Queue" button. Makes a `GET` request to: `/data/topic/mdm.facilities.preprocess/count/10` (via proxy). Parses the list and finds the matching EUID.
+*   **Event Queue:** Input field for EUID and a "Query" button. Makes a `GET` request to: `/data/topic/mdm.facilities.events/count/2` (via proxy).
+*   **Query Location By EUID:** Input field for EUID, hitting `/Location/IS01/getLocationDetailsByEUID?EUID=<EUID>` (via proxy).
+
+---
+
+### **Global Generation Rules:**
+*   **Dates:** `YYYY-MM-DD`. Date-times: `YYYY-MM-DD HH:mm:ss.ffffff` (or `.0` for XML).
+*   **meta.id / requestID:** Random 19-digit number.
+*   **State Persistence:** If Legal Entity is generated, store its ID globally. If Hierarchy is generated, store its ID globally.
+
+---
+
+### **Domain Payload Rules & Exact Schemas:**
+*Generate payloads exactly matching these structures.*
+
+#### **A. Legal Entity Payload (JSON):**
+*   **Pre-validation:** Generate random 6-digit `legalIdentificationNumber`. POST to `/Common/IS03/executeDB2Query` with query `Select * from MDM.CONTEQUIV Where ADMIN_SYS_TP_CD = '100010' and ADMIN_CLIENT_ID = '<RANDOM_ID>'`. Loop until empty.
+{
+  "meta": { "id": "<19_digit_random>", "lastUpdated": "<current_timestamp>" },
+  "legalEntity": {
+    "legalIdentificationNumber": "<generated_unique_6_digit>",
+    "legalEntityName": "SYNTH - [Fake Company] [Suffix]",
+    "lineOfBusiness": "<Domestic=Dialysis/Pharmacy | International=INTL-Dialysis>",
+    "taxNumber": "<nn-nnnnnnn>"
+  }
+}
+
+#### **B. Org Assignment Payload (JSON):**
+{
+  "meta": { "id": "<19_digit_random>", "lastUpdated": "<current_timestamp>" },
+  "OrgAssignment": {
+    "orgNumber": "<hierarchy_mapped_id>",
+    "orgName": "<hierarchy_mapped_name>",
+    "smallPalmerVp": "<fake_name_if_palmer>",
+    "groupVp": "<fake_name_if_group>",
+    "groupFinanceDirector": "<fake_name_if_group>",
+    "gfdEmail": "<fake_email_if_group>",
+    "divisionVp": "<fake_name_if_division>",
+    "divisionFinanceManager": "<fake_name_if_division>",
+    "dfmEmail": "<fake_email_if_division>",
+    "regionOperationsDirector": "<fake_name_if_region>",
+    "dateCreatedInOracle": "2023-01-01",
+    "lastUpdatedInOracle": "2023-01-01",
+    "lastTableRefreshDate": "2023-01-01"
+  }
+}
+
+#### **C. Facility Hierarchy Payload (JSON):**
+*   **Pre-validation:** Generate random 5-digit `facilityIdentificationNumber`. POST to `/Common/IS03/executeDB2Query` with `Select * from MDM.CONTEQUIV Where ADMIN_SYS_TP_CD = '100011' and ADMIN_CLIENT_ID = '<RANDOM_ID>'`. Loop until unique.
+*   **Parent ID Math Rule (CRITICAL):** For EVERY level, the numeric portion of the **Parent ID** is ALWAYS the numeric portion of the **Child ID minus 2**.
+{
+  "meta": { "id": "<19_digit_random>", "lastUpdated": "<current_timestamp>" },
+  "facilityHierarchy": {
+    "facilityIdentificationNumber": "<generated_unique_5_digit>",
+    "smallPalmerParentId": "PS013",
+    "smallPalmerId": "PS015",
+    "smallPalmerParentName": "PINNACLE : ALL",
+    "smallPalmerName": "PINNACLE : SG&A",
+    "groupParentId": "GV400",
+    "groupId": "GV402",
+    "groupParentName": "VANGUARD : ALL",
+    "groupName": "VANGUARD : SG&A",
+    "divisionParentId": "D4300",
+    "divisionId": "D4302",
+    "divisionParentName": "ALLIANCE : ALL",
+    "divisionName": "ALLIANCE : SG&A",
+    "regionParentId": "R4300",
+    "regionId": "R4302",
+    "regionParentName": "CREST : ALL",
+    "regionName": "CREST : SG&A"
+  }
+}
+
+#### **D. Facility Master Payload (JSON):**
+*   **ID Inheritance:** `facilityIdentificationNumber` pulls from Hierarchy if generated. `legalEntityIdNumber` pulls from Legal Entity if generated. Apply Prefix date logic.
+{
+  "meta": { "id": "<19_digit_random>", "lastUpdated": "<current_timestamp>" },
+  "facilityMaster": {
+    "facilityIdentificationNumber": "<inherited_or_random_5_digit>",
+    "legalEntityIdNumber": "<inherited_or_random_6_digit>",
+    "facilityLegalName": "[Prefix] Fake Company Name",
+    "facilityCommonName": "SYNTH - [Prefix] Fake Company Name",
+    "acquistionDate": "<calc_date_or_null>",
+    "operatingStartDate": "<calc_date_or_null>",
+    "accountingStartDate": "<calc_date_or_null>",
+    "operatingEndDate": "<calc_date_or_null>",
+    "accountingEndDate": "<calc_date_or_null>",
+    "physicalStreet1": "5001 POPLAR FARMS",
+    "physicalCity": "FRANKLIN",
+    "physicalState": "TN",
+    "physicalZip": "37067"
+  }
+}
+
+#### **E. Karma Payload (JSON):**
+*   Must contain exactly 11 nested License blocks with `StartDate` and `ExpirationDate`.
+{
+  "meta": { "id": "<19_digit_random>", "lastUpdated": "<current_timestamp>" },
+  "loadType": "byId",
+  "MDM_KARMA_PUB": {
+    "row": {
+      "FacilityMasterID": "<random_6_digit>",
+      "FacilityNo": "<random_2_6_digit>",
+      "LocationType": "<Freestanding Dialysis Facility / Acute Program / DeNovo / Closed>",
+      "FiscalIntermediary": "<random_intermediary>",
+      "Pay_ToPOBox": "PO BOX 1234",
+      "Pay_ToCity": "FRANKLIN",
+      "Pay_ToState": "TN",
+      "Pay_ToZip": "37067",
+      "AlarmBusinessLicense": { "AlarmBusinessLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "BusinessLicense": { "BusinessLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "CertificateOfNeed": { "CertificateOfNeed": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "CLIALicenseNumber": { "CLIALicenseNumber": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "CountyLicenseNumber": { "CountyLicenseNumber": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "HomeHealthAgencyLicense": { "HomeHealthAgencyLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "HospitalLicense": { "HospitalLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "LabDirectorStateLicense": { "LabDirectorStateLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "MedicareCertNumber": { "MedicareCertNumber": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "StateLicenseNumber": { "StateLicenseNumber": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null },
+      "StatePharmacyLicense": { "StatePharmacyLicense": "<rand_id>", "StartDate": "2023-01-01", "ExpirationDate": "2025-01-01", "RenewalDueDate": null }
+    },
+    "CS": {
+      "CERTSRV0_SHORTDESC": "In-center Hemo",
+      "CERTSRV1_LONGDESC": "PD Services",
+      "CERTSRV2_SHORTDESC": "Home Hemo",
+      "CERTSRV3_LONGDESC": "Shift/Other"
+    }
+  }
+}
+
+#### **F. MNA Payload (XML):**
+*   Target URL: `https://mdm-{env}.davita.com:443/MDMWSProvider/MDMService`
+*   Header Content-Type: `text/xml`
+<NS1:Envelope xmlns:NS1="http://schemas.xmlsoap.org/soap/envelope/">
+	<NS1:Header>
+		<NS2:Security xmlns:NS2="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" NS1:mustUnderstand="1">
+			<NS2:UsernameToken>
+				<NS2:Username>mdm_castiron_user</NS2:Username>
+				<NS2:Password>passw0rd</NS2:Password>
+			</NS2:UsernameToken>
+		</NS2:Security>
+	</NS1:Header>
+	<NS1:Body>
+		<NS3:maintainMNA xmlns:NS3="http://location.p1.mdm.dva.com/DVA_Location/port">
+			<NS4:RequestControl xmlns:NS4="http://www.ibm.com/mdm/schema">
+				<NS4:requestID><19_digit_random></NS4:requestID>
+				<NS4:DWLControl>
+					<NS4:requesterName>MNA_SVC_ACE</NS4:requesterName>
+					<NS4:requesterLanguage>100</NS4:requesterLanguage>
+					<NS4:clientSystemName>100006</NS4:clientSystemName>
+					<NS4:userRole>DV_2</NS4:userRole>
+					<NS4:ControlExtensionProperty name="DOMAIN">LOCATION</NS4:ControlExtensionProperty>
+					<NS4:ControlExtensionProperty name="ERROR_TYPE"/>
+				</NS4:DWLControl>
+			</NS4:RequestControl>
+			<NS5:MNAINPUTBObj xmlns:NS5="http://www.ibm.com/mdm/schema">
+				<NS5:FACILITY_NBR><random_5_digit></NS5:FACILITY_NBR>
+				<NS5:RCG_ID>R<random_5_digit></NS5:RCG_ID>
+				<NS5:COUNTY_FIPS><random_5_digit></NS5:COUNTY_FIPS>
+				<NS5:LATITUDE>40.671783</NS5:LATITUDE>
+				<NS5:LONGITUDE>-78.250454</NS5:LONGITUDE>
+				<NS5:CBSA_FIPS>11020</NS5:CBSA_FIPS>
+				<NS5:CBSA_NAME>TEST PA</NS5:CBSA_NAME>
+				<NS5:MSA_TYPE>Metropolitan</NS5:MSA_TYPE>
+				<NS5:VSA_ID>3</NS5:VSA_ID>
+				<NS5:VSA_NAME>Altoonaa PAA</NS5:VSA_NAME>
+				<NS5:FMIDType>100011</NS5:FMIDType>
+				<NS5:ADDRESSType>100003</NS5:ADDRESSType>
+				<NS5:RCGIDType>100006</NS5:RCGIDType>
+			</NS5:MNAINPUTBObj>
+		</NS3:maintainMNA>
+	</NS1:Body>
+</NS1:Envelope>
+
+#### **G. NSHN Payload (XML):**
+*   Target URL: `https://mdm-{env}.davita.com:443/MDMWSProvider/MDMService`
+*   Header Content-Type: `text/xml`
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope 
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+    xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+    <soapenv:Header>
+        <wsse:Security xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <wsse:UsernameToken>
+                <wsse:Username>mdmadmin</wsse:Username>
+                <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
+            </wsse:UsernameToken>
+        </wsse:Security>
+    </soapenv:Header>
+    <soapenv:Body>
+        <maintainFacilityNHSN xmlns="http://location.p1.mdm.dva.com/DVA_Location/port">
+            <RequestControl xmlns="http://www.ibm.com/mdm/schema">
+                <requestID><19_digit_random></requestID>
+                <DWLControl>
+                    <requesterName>SOAP_YOURNAME</requesterName>
+                    <requesterLanguage>100</requesterLanguage>
+                    <clientSystemName>100011</clientSystemName>
+                    <userRole>DKC_Department</userRole>
+                </DWLControl>
+            </RequestControl>
+            <FACILITY_NHSNBObj xmlns="http://www.ibm.com/mdm/schema">
+                <ORG_ID><random_5_digit></ORG_ID>
+                <OID>2.16.840.1.114222.4.1.217194</OID>
+                <NAME>SYNTH OLYMPIC VIEW DIALYSIS CENTER</NAME>
+                <FILE_DT>2023-10-20</FILE_DT>
+                <MODIFY_DT>2023-10-20</MODIFY_DT>
+                <IS_DELETED>N</IS_DELETED>
+                <TCRMOrganizationBObj>
+                    <DisplayName>DVH-Integrated Care Center</DisplayName>
+                    <PartyType>O</PartyType>
+                    <CreatedDate>2023-03-10 11:43:42.722</CreatedDate>
+                    <SinceDate>2023-10-13 10:19:48.0</SinceDate>
+                    <ClientStatusType>100003</ClientStatusType>
+                    <PartyActiveIndicator>Y</PartyActiveIndicator>
+                    <LastVerifiedDate>2023-10-25 17:28:41.0</LastVerifiedDate>
+                    <SourceIdentifierType>100008</SourceIdentifierType>
+                    <AccessTokenValue>46616c6365gs41d5ts4gs4gd2e20363d567f890</AccessTokenValue>
+                    <OrganizationType>100404</OrganizationType>
+                    <TCRMOrganizationNameBObj>
+                        <OrganizationName>DVH-Integrated Care Center</OrganizationName>
+                        <StartDate>2023-03-10 11:43:42.727</StartDate>
+                        <NameUsageType>100007</NameUsageType>
+                        <LastVerifiedDate>2023-10-25 17:28:41.0</LastVerifiedDate>
+                        <SourceIdentifierType>100008</SourceIdentifierType>
+                        <SOrganizationName>DVH-INTEGRATED CARE CENTER</SOrganizationName>
+                    </TCRMOrganizationNameBObj>
+                </TCRMOrganizationBObj>
+            </FACILITY_NHSNBObj>
+        </maintainFacilityNHSN>
+    </soapenv:Body>
+</soapenv:Envelope>
