@@ -1,0 +1,174 @@
+Data Dictionaries (Legal Entity):
+- Domestic LOBs: ["Charity", "CKC-Chronic Kidney Care", "Corporate", "Corporate Top Level", "DaVita Complex Care", "DaVita Ventures", "DCR-Clinical Trials and Studies", "DCR-Research and Development", "Dialysis", "Dialysis Home Health Agency (SAHHD)", "Disease Management", "DPC-Direct Primary Care", "DPC-Paladina Clinic", "DVH-DaVita Village Health", "HealthCare Partners", "HomeChoice Partners", "IKC-Integrated Kidney Care", "Insurance", "Lab", "Lifeline", "Nephrology Care Alliance", "NPS", "NPS-Managed Nephrology Practice", "Pharmacy", "Physicains Billing Services", "PSO (Patient Safety Organization)", "Real Estate Development", "Software", "Strategic Initiative"]
+- International LOBs: ["INTL-Clinical Research", "INTL-Corporate Top Level", "INTL-Dialysis", "INTL-Dialysis Support", "INTL-Health Services"]
+- International Tax Numbers: ["XX-Brazil", "XX-Chile", "XX-China", "XX-Colombi", "XX-Denmark", "XX-Ecuador", "XX-Germany", "XX-HongKon", "XX-India", "XX-Japan", "XX-Korea", "XX-Malaysia", "XX-Managed", "XX-Netherland", "XX-Panama", "XX-Philipp", "XX-Poland", "XX-Portugal", "XX-SaudiAr", "XX-Singapo", "XX-Sweden", "XX-Taiwan", "XX-Thailan", "XX-UKingdo"]
+Sample JSON Payload (Legal Entity):
+{
+  "meta": {
+    "id": "8635821616880269304",
+    "lastUpdated": "2026-02-13 04:33:29",
+    "tag": [{ "display": "legalEntity" }]
+  },
+  "legalEntity": {
+    "legalIdentificationNumber": "701155",
+    "legalEntityName": "SYNTH - Stamm, Krajcik and Feil Health Clinic",
+    "taxNumber": "11-1504505",
+    "lineOfBusiness": "DCR-Research and Development",
+    "lastUpdateDate": "2026-02-13 04:33:29"
+  }
+}
+
+
+Data Dictionaries (Facility Master):
+- CBO: ["Berwyn", "Brentwood", "Corporate Strategic Initiative", "Denver", "HRIS System Mapping", "International", "Irvine", "JV-Brent", "JV-Tacoma", "MGMT Contract", "None", "SI Startup", "Tacoma"]
+- Acquisition Company: ["Acquisition", "CODA", "CODA,RTC ACQ", "Corporate Structure", "DNP Acquisition", "DNP DNVO", "DSI", "Gambro", "Managed", "NY ACQ", "Prison Contract", "REN - Gambro", "SI ACQ", "SI Startup"] (Set to null if not ACQ- prefix)
+- Parent Child: ["Parent", "Child"]
+- Finance Major RollUp: ["ANCL0", "GHPR0", "INTAN", "INTGA", "INTOP", "OPER0", "SG&A0"]
+- Procurement Method: ["Acquisition", "All Other", "Corporate Request", "Denovo", "Field Request", "Managed", "Payroll System Mapping"]
+- Business Segment: ["DKC-DaVita Kidney Care", "INTL-DaVita International"]
+- Line of Business: ["Dialysis", "Dialysis Acute only", "Dialysis Support", "Dialysis Prison Contracts only", "Corporate Top Level", "NPS", "NPS-Managed Nephrology Practice", "DaVitaCare", "INTL-Dialysis", "INTL-Dialysis Support", "Corporate", "Lab", "DCR-Clinical Trials and Studies", "Strategic Initiative", "DVH-Health Plan", "Pharmacy", "Charity"]
+- Facility Type: ["Facilities Operations", "Regional Office", "N/A", "Lifeline Services", "Division Office", "Operations (NPS)", "DaVita Care Services", "LAB-General Laboratory", "International-Team Embassy", "Executive", "Direct Primary Care", "Corporate Finance", "Dialysis Operations Support"]
+- Admins: ["LORENA ALBA", "VACANT POSITION", "NOT APPLICABLE", "N/A", "TRISHA SORENSON", "MICHAEL HERRICK", "CYNTHIA MOORE"]
+- Territory Code: ["US", "IT", "TH", "SG", "GB", "SA", "DE", "IN", "CN", "BR", "PR", "GU", "CO", "MX", "EC", "NL"]
+- Territory Short Name: ["United States", "Italy", "Thailand", "Singapore", "United Kingdom", "Saudi Arabia", "Germany", "India", "China", "Puerto Rico", "Ecuador", "Brazil"]
+Sample JSON Payload (Facility Master):
+{
+  "meta": {
+    "id": "2025011708130979413",
+    "lastUpdated": "2026-03-31 13:40:52.635324",
+    "tag": [{ "display": "facilityMaster" }]
+  },
+  "facilityMaster": {
+    "facilityIdentificationNumber": "8455",
+    "facilityLegalName": "Jacksonville Dialysis Clinic",
+    "facilityDescription": "Jacksonville Dialysis Clinic",
+    "facilityCommonName": "SYNTH - Jacksonville Dialysis Clinic",
+    "cbo": "None",
+    "cms5StarRating": "5",
+    "acquisitionCompany": null,
+    "formerFacilityId": "N/A",
+    "accountingStartDate": "2000-06-22",
+    "accountingEndDate": null,
+    "operatingStartDate": "2002-06-22",
+    "operatingEndDate": null,
+    "parentChild": "Parent",
+    "acquistionDate": null,
+    "financeMajorRollUp": "OPER0",
+    "legalEntityIdNumber": "942366",
+    "procurementMethod": "Field Request",
+    "businessSegment": "DKC-DaVita Kidney Care",
+    "lineOfBusiness": "Dialysis Support",
+    "facilityType": "Regional Office",
+    "facilityAdministrator": "TERESA HUDDLESTON",
+    "physicalStreet1": "5001 POPLAR FARMS",
+    "physicalStreet2": null,
+    "physicalCity": "FRANKLIN",
+    "physicalState": "TN",
+    "physicalZip": "37067",
+    "county": "Williamson",
+    "phone": "2707351883",
+    "fax": "2703608982",
+    "groupFacilityAdministrator": "VACANT POSITION",
+    "territoryCode": "US",
+    "territoryShortName": "United States",
+    "dateCreatedInOracle": "2011-08-18 02:47:00",
+    "lastUpdatedInOracle": "2026-03-31 13:40:52.635324",
+    "lastTableRefreshDate": "2026-03-31 13:40:52.635324"
+  }
+}
+E. Karma Payload
+- Generate 11 nested License blocks (e.g., AlarmBusinessLicense, CLIALicenseNumber) each with a random alphanumeric number, a StartDate, and an ExpirationDate.
+- Address block: Mock Pay_ToPOBox, Pay_ToCity, Pay_ToState, Pay_ToZip.
+Data Dictionaries (Karma):
+- Location Type: ["Unknown", "Freestanding Dialysis Facility", "Acute Program", "Prison System", "Other", "null", "Acquisition", "Homechoice", "At Home Program", "Closed", "Temporarily Closed", "DeNovo", "Lifeline", "PD Only Location"]
+- Facility Regulatory Name: ["Grand Blanc Dialysis Center", "Dyker Heights Dialysis Center", "Port Chester Dialysis and Renal Center", "Celebration Dialysis", "Palmer Dialysis Center", "Hunters Creek Dialysis"]
+- Fiscal Intermediary: ["Cahaba GBA - AL (J10)", "Noridian - UT (JF)", "Novitas (CO - JH)", "WPS - KS (J5)", "Novitas (PA - JL)", "WPS - NE (J5)", "Cahaba GBA - GA (J10)", "Novitas (AR - JH)"]
+- LC Coordinator Name: ["Edmondson, Sharon", "Cardno, Lynn", "Kohel, Emily"]
+- CERTSRV Descriptions: ["In-center Hemo", "PD", "HEMO", "null", "Reuse", "HHD"]
+Sample JSON Payload (Karma):
+{
+  "meta": {
+    "id": "2026033123040388925",
+    "tag": [{ "display": "KarmaLoad" }]
+  },
+  "loadType": "byId",
+  "MDM_KARMA_PUB": {
+    "row": {
+      "FacilityMasterID": "856341",
+      "FacilityNo": "84565",
+      "NumberofCertifiedStations": "5",
+      "FiscalIntermediary": "National Govt Svcs - IL",
+      "LocationType": "AT HOME PROGRAM",
+      "AddedDate": "2002-06-25 14:39:35.327",
+      "ModifiedDate": "2021-07-13 10:21:05.107",
+      "TransmittalDate": "2021-07-13 11:00:00.443",
+      "AlarmBusinessLicense": "2007075641",
+      "AlarmBusinessLicenseStartDate": "2021-05-11 17:00:09.570",
+      "AlarmBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "AlarmBusinessLicenseRenewalDueDate": null,
+      "CityBusinessLicenseNumber": "8635466",
+      "CityBusinessLicenseStartDate": "2021-05-11 17:00:09.570",
+      "CityBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "CityBusinessLicenseRenewalDueDate": null,
+      "CLIALicenseNumber": "04D0962298",
+      "CLIAStartDate": "2021-01-01 00:00:00",
+      "CLIAExpirationDate": "2030-01-01 00:00:00",
+      "CountyBusinessLicenseNumber": "3346346",
+      "CountyBusinessLicenseStartDate": "2021-05-11 17:00:09.570",
+      "CountyBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "CountyBusinessLicenseRenewalDueDate": null,
+      "FireSafetyBusinessLicenseNumber": "63474578",
+      "FireSafetyBusinessLicenseStartDate": "2006-05-11 17:00:09.570",
+      "FireSafetyBusinessLicenseExpirationDate": "2027-05-11 17:00:09.570",
+      "FireSafetyBusinessLicenseRenewalDueDate": null,
+      "HazardousWasteNumber": "87463554",
+      "HazardousWasteStartDate": "2006-05-11 17:00:09.570",
+      "HazardousWasteExpirationDate": "2027-05-11 17:00:09.570",
+      "PrimaryMedicaidCertNumber": "74365233",
+      "MedicaidStartDate": "2006-05-11 17:00:09.570",
+      "MedicaidExpirationDate": "2027-05-11 17:00:09.570",
+      "ParishBusinessLicenseNumber": "32552412",
+      "ParishBusinessLicenseStartDate": "2016-05-11 17:00:09.570",
+      "ParishBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "ParishBusinessLicenseRenewalDueDate": null,
+      "StateBusinessLicenseNumber": "45745765",
+      "StateBusinessLicenseStartDate": "2016-05-11 17:00:09.570",
+      "StateBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "StateLicenseRenewalDueDate": null,
+      "ZoneBusinessLicenseNumber": "73453243",
+      "ZoneBusinessLicenseStartDate": "2016-05-11 17:00:09.570",
+      "ZoneBusinessLicenseExpirationDate": "2028-05-11 17:00:09.570",
+      "ZoneBusinessLicenseRenewalDueDate": null,
+      "MedicareCertNumber": "14-2774",
+      "MedicareStartDate": "2006-05-11 17:00:09.570",
+      "MedicareExpirationDate": "2027-05-11 17:00:09.570",
+      "PermissionDateCreated": "2006-05-11 17:00:09.570",
+      "PermissionDateModified": null,
+      "NPI": "4574554868",
+      "RegulatoryPermissionNumberDateModified": "2022-01-26 18:08:05.853",
+      "RegulatoryPermissionNumberDateCreated": "2006-05-11 17:00:09.070",
+      "Pay_ToPOBox": "1068 Monroe Street",
+      "Pay_ToCity": "Denver",
+      "Pay_ToState": "CO",
+      "Pay_ToZip": "80206",
+      "AddressDateModified": "2022-08-04 06:16:52.173",
+      "NumberofIsolationStations": 7,
+      "FacilityRegulatoryName": "TBD - 00509",
+      "FacilityMasterDetailDateCreated": "2006-04-05 18:56:51.423",
+      "FacilityMasterDetailDateModified": "2022-01-26 18:08:05.857",
+      "LCCoordinatorName": "Edmondson, Sharon",
+      "RegulatoryContactDateModified": null,
+      "RegulatoryContactDateCreated": null
+    },
+    "CS": {
+      "CERTSRV0_SHORTDESC": "In-center Hemo",
+      "CERTSRV1_LONGDESC": "PD Services",
+      "CERTSRV2_SHORTDESC": "Another Service Short Desc",
+      "CERTSRV3_LONGDESC": "Another Service Long Desc",
+      "CERTSRV4_SHORTDESC": null,
+      "CERTSRV5_LONGDESC": null,
+      "CERTSRV6_SHORTDESC": null,
+      "CERTSRV7_LONGDESC": null
+    }
+  }
+}
