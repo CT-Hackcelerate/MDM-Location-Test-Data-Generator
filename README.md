@@ -22,7 +22,7 @@ A modern, browser-based React application designed to accelerate Quality Assuran
 
 ## Features
 
-- **7 MDM domains** — Legal Entity, Org Assignment, Facility Hierarchy, Facility
+- **7 MDM Sources** — Legal Entity, Org Assignment, Facility Hierarchy, Facility
   Master, Karma, MNA, and NSHN, each with realistic synthetic field values.
 - **Editable payloads** — every generated JSON/XML payload is shown in an editable
   panel so you can tweak fields before posting.
@@ -80,20 +80,6 @@ npm run dev
 Then open **http://localhost:5173** in your browser. The dev server hot-reloads on
 every file change.
 
-## Production build
-
-```bash
-# Build an optimized static bundle into dist/
-npm run build
-
-# Preview the production build locally
-npm run preview
-```
-
-`npm run build` outputs static assets to the `dist/` folder; `npm run preview` serves
-that folder so you can verify the production bundle before deploying.
-
----
 
 ## The interface
 
