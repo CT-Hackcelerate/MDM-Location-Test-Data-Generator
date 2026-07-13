@@ -1,13 +1,6 @@
 # MDM Location Data Generator
 
-A dark-mode **React + Vite** single-page app that lets QA testers generate synthetic
-test payloads (JSON & XML/SOAP) for DaVita's **Location Master Data Management (MDM)**
-system, post them to the target environment, and validate the results by querying the
-Kafka preprocess/event queues and looking up locations by EUID.
-
-Everything runs in the browser — pick an environment and a domain, click **Generate**,
-optionally edit the payload, click **Run Payload**, then confirm the record flowed
-through the pipeline.
+A modern, browser-based React application designed to accelerate Quality Assurance for DaVita's Location Master Data Management (MDM) system. This single-page application enables QA engineers to dynamically generate, customize, and execute synthetic JSON and XML/SOAP payloads across multiple test environments. Built for end-to-end pipeline visibility, the tool allows users to post payloads and immediately validate downstream data flow by querying Kafka preprocess/event queues and performing direct EUID lookups.
 
 ---
 
